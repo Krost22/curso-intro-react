@@ -7,15 +7,44 @@ import { CreateTodoButton } from './CreateTodoButton';
 import swal from 'sweetalert';
 // import './App.css';
 
-const defaultTodos = [
-  { text: 'Cortar cebolla', completed: true },
-  { text: 'Tomar el curso de intro a React', completed: false },
-  { text: 'Almorzar', completed: false },
+// const defaultTodos = [
+//   { text: 'Cortar cebolla', completed: true },
+//   { text: 'Tomar el curso de intro a React', completed: false },
+//   { text: 'Almorzar', completed: false },
   
-];
+// ];
+
+//Devuelve los items de localstorage de nuestros TODOs
+
+function useLocalStorage(itemName, initialValue) {
+  
+  const localStorageItem = localStorage.getItem(itemName);
+  let parsedItem;
+  
+  if (!localStorageItem){
+    localStorage.setItem(itemName, JSON.stringify(initialValue));
+    parsedItem = initialValue;
+  }else{
+    parsedItem = JSON.parse(localStorageItem);
+  }
+  
+  const [item, setItem] = React.useState(parsedItem);
+  
+  const saveItem = (newItem) => {
+    const stringifiedItem = JSON.stringify(newItem);
+    localStorage.setItem(itemName, stringifiedItem);
+    setItem(newItem);
+  };
+
+  //Elementos que se guardan en localStorage
+  return[
+    item,
+    saveItem,
+  ];
+}
 
 function App() {
-  const [todos, setTodos] = React.useState(defaultTodos);
+  const [todos, saveTodos] = useLocalStorage('TODOS_V1', []);
   const [searchValue, setSearchValue] = React.useState('');
 
   const completedTodos = todos.filter(todo => !!todo.completed).length;
@@ -25,8 +54,8 @@ function App() {
 
   let searchedTodos = [];
 
-  if (!searchValue.length >=1) {
-    searchedTodos= todos;
+  if (!searchValue.length >= 1) {
+    searchedTodos = todos;
   } else {
     searchedTodos = todos.filter(todo => {
       const todoText = todo.text.toLowerCase();
@@ -35,7 +64,6 @@ function App() {
     });
   }
 //-----------------------------------------------
-//Busca cual de todos los TODOs cumple con la condicion(mismo texto)
 
   const  alertCheck = () => {
     swal({
@@ -45,11 +73,12 @@ function App() {
      }); 
    };
 
+//Busca cual de todos los TODOs cumple con la condicion(mismo texto)
   const completeTodo = (text) => {
     const todoIndex = todos.findIndex(todo => todo.text === text);
     const newTodos = [...todos];
     newTodos[todoIndex].completed = true;
-    setTodos(newTodos);
+    saveTodos(newTodos);
     alertCheck();
   };
 
@@ -65,13 +94,12 @@ function App() {
     const todoIndex = todos.findIndex(todo => todo.text === text);
     const newTodos = [...todos];
     newTodos.splice(todoIndex, 1);
-    setTodos(newTodos);
+    saveTodos(newTodos);
     alertDelete();
     
   };
 
 //-----------------------------------------------
-
 
   return (
     <React.Fragment>
