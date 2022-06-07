@@ -5,6 +5,7 @@ import { TodoList } from './TodoList';
 import { TodoItem } from './TodoItem';
 import { CreateTodoButton } from './CreateTodoButton';
 import swal from 'sweetalert';
+import { Modal } from './Modal';
 // import './App.css';
 
 // const defaultTodos = [
@@ -17,35 +18,66 @@ import swal from 'sweetalert';
 //Devuelve los items de localstorage de nuestros TODOs
 
 function useLocalStorage(itemName, initialValue) {
+  const [error, setError] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [item, setItem] = React.useState(initialValue);
+
+
+  React.useEffect(() => {
+    setTimeout(() => {
+    try {
+      const localStorageItem = localStorage.getItem(itemName);
+      let parsedItem;
   
-  const localStorageItem = localStorage.getItem(itemName);
-  let parsedItem;
+      if (!localStorageItem){
+        localStorage.setItem(itemName, JSON.stringify(initialValue));
+        parsedItem = initialValue;
+      } else{
+        parsedItem = JSON.parse(localStorageItem);
+      } 
+
+    setItem(parsedItem);
+    setLoading(false);
+    } catch (error) {
+      setError(error);
+    }
+    }, 1000)//tiempo para simular el loading
+  });
   
-  if (!localStorageItem){
-    localStorage.setItem(itemName, JSON.stringify(initialValue));
-    parsedItem = initialValue;
-  }else{
-    parsedItem = JSON.parse(localStorageItem);
-  }
   
-  const [item, setItem] = React.useState(parsedItem);
+  
   
   const saveItem = (newItem) => {
-    const stringifiedItem = JSON.stringify(newItem);
-    localStorage.setItem(itemName, stringifiedItem);
-    setItem(newItem);
+    try {
+      const stringifiedItem = JSON.stringify(newItem);
+      localStorage.setItem(itemName, stringifiedItem);
+      setItem(newItem);
+    } catch (error) {
+      setError(error);
+    }
   };
 
   //Elementos que se guardan en localStorage
-  return[
+  return{
     item,
     saveItem,
-  ];
+    loading,
+    error,
+  };
 }
-
+//La funcion mera mera
 function App() {
-  const [todos, saveTodos] = useLocalStorage('TODOS_V1', []);
+  const {
+    item: todos,
+    saveItem: saveTodos,
+    loading,
+    error,
+    
+
+
+  } = useLocalStorage('TODOS_V1', []);
   const [searchValue, setSearchValue] = React.useState('');
+  const [openModal, setOpenModal] = React.useState(false);
 
   const completedTodos = todos.filter(todo => !!todo.completed).length;
   const totalTodos = todos.length;
@@ -90,15 +122,24 @@ function App() {
      }); 
    };
 
+//Busca cual de todos los TODOs cumple con la condicion(mismo texto)
   const deleteTodo = (text) => {
     const todoIndex = todos.findIndex(todo => todo.text === text);
     const newTodos = [...todos];
-    newTodos.splice(todoIndex, 1);
+    newTodos.splice(todoIndex, 1); //splice elimina la cantidad digitada despues de la ,
     saveTodos(newTodos);
     alertDelete();
-    
   };
 
+    // console.log('Render (Antes del use effect)')
+
+    // React.useEffect(() => {
+    //   console.log('use effect');
+    // }, [totalTodos]);
+
+    // console.log('Render (luego del use effect)');
+
+    
 //-----------------------------------------------
 
   return (
@@ -112,6 +153,10 @@ function App() {
        setSearchValue={setSearchValue}
       />
       <TodoList>
+        {error && <p>Desespérate, hubo un error...</p>}
+        {loading && <p>Estamos cargando, no entres en panico</p>}
+        {(!loading && !searchedTodos.length) && <p>¡Crea tu primer TODO!</p>}
+
         {searchedTodos.map(todo => (
           <TodoItem
             key={todo.text}
@@ -124,7 +169,15 @@ function App() {
         ))}
       </TodoList>
 
-      <CreateTodoButton />
+          {!!openModal && (
+            <Modal>
+            <p>{searchedTodos[0]?.text}</p>
+          </Modal>
+          )}
+
+      <CreateTodoButton 
+        setOpenModal={setOpenModal}
+      />
       <footer />
     </React.Fragment>
   );

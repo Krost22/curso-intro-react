@@ -4,12 +4,12 @@ import swal from 'sweetalert';
 
 function CreateTodoButton(props) {
   const onClickButton = (msg) => {
-    alert(msg);
+    props.setOpenModal(true);
   }
   return (
     <button 
     className="CreateTodoButton"
-    onClick={() => onClickButton(swal('Aquí va un modal'))}
+    onClick={ onClickButton}
 
     >
       +
